@@ -53,10 +53,12 @@ class Discriminator(nn.Module):
                                            nn.Linear(512, nclasses),
                                            nn.Sigmoid())
 
-    def forward(self, x):
+    def forward(self, x, self_learning: bool = False):
         z = self.feature_learning(x)
         z = torch.flatten(z)
         out = self.classifier(z)
+        if not self_learning:
+            return out
         self_learning = self.self_learning(z)
 
         return out, self_learning
