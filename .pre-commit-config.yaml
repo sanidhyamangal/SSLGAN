@@ -11,3 +11,7 @@ repos:
     rev: v0.30.0
     hooks:
     -   id: yapf
+-   repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
