@@ -9,6 +9,7 @@ import torch  # for pytorch based stuff
 import torch.nn as nn  # for nn stuff
 import torchvision.utils as vutils  # for plotting and other part
 from torchvision import transforms  # for transforming the vision related ops
+from typing import List
 
 
 def create_dirs_if_not_exists(path) -> None:
