@@ -22,7 +22,7 @@ class BaseGANTrainer:
                  gen_opt: Optimizer,
                  disc_opt: Optimizer,
                  self_inducing_loss: nn.CrossEntropyLoss = nn.CrossEntropyLoss,
-                 gan_loss: nn.BCELoss = nn.BCEWithLogitsLoss,
+                 gan_loss: nn.BCELoss = nn.BCELoss,
                  device="cpu",
                  lr=1e-4) -> None:
 
@@ -39,32 +39,32 @@ class BaseGANTrainer:
 
     def disc_step(self, xthat, xt, target_labels):
         """Discriminator backprop step"""
-        # store disc loss
-        disc_loss_log_ = []
-
         # train disc 5 times before performing gan update
-        for t in range(5):
-            # find true and false value for the real and fake dist
-            disc_true = self.discriminator(xt)
-            disc_false = self.discriminator(xthat.data)
+        # for t in range(5):
+        # find true and false value for the real and fake dist
+        disc_true = self.discriminator(xt).view(-1)
+        disc_false = self.discriminator(xthat.data).view(-1)
+        real_label = torch.ones_like(disc_true)
+        false_label = torch.zeros_like(disc_false)
 
-            # find the values for the true dist and fake dist
-            disc_loss = -torch.mean(torch.log(disc_true)) - torch.mean(
-                torch.log(1 - disc_false))
+        # find the values for the true dist and fake dist
+        disc_loss = self.criterion(disc_true, real_label) + self.criterion(
+            disc_false, false_label)
 
-            # take a step on discriminator optimizer
-            self.discriminator_optimizer.zero_grad()
-            disc_loss.backward()
-            self.discriminator_optimizer.step()
-            disc_loss_log_.append(disc_loss.item())
+        # take a step on discriminator optimizer
+        self.discriminator_optimizer.zero_grad()
+        disc_loss.backward()
+        self.discriminator_optimizer.step()
 
-        return np.mean(disc_loss_log_)
+        return disc_loss.detach().cpu().numpy()
 
     def gen_step(self, xthat):
         """function to perform backprop on generator"""
 
         # compute gen loss and take a step using optimizer
-        gen_loss = torch.mean(torch.log(1 - self.discriminator(xthat)))
+        output = self.discriminator(xthat).view(-1)
+        real_labels = torch.ones_like(output)
+        gen_loss = self.criterion(output, real_labels)
         self.generator_optimizer.zero_grad()
         gen_loss.backward()
         self.generator_optimizer.step()
@@ -97,13 +97,15 @@ class BaseGANTrainer:
         gen_loss = []
         disc_loss = []
         dataloader = DataLoader(dataset, batch_size=batch_sz, shuffle=True)
-        latent_dim = self.generator.arch[0]
+        latent_dim = 100
 
         # train models for n+1 epochs
         for epoch in range(0, epochs + 1):
             # generate the gaussian noise for the generator
-            for images, angles in iter(dataloader):
-                noise = torch.randn((batch_sz, latent_dim)).to(self.device)
+            for idx, data in enumerate(dataloader):
+                images, angles = data
+                noise = torch.randn(
+                    (batch_sz, latent_dim, 1, 1)).to(self.device)
 
                 # train step
                 _gen_loss, _disc_loss = self.train_batch(
@@ -112,21 +114,18 @@ class BaseGANTrainer:
                 gen_loss.append(_gen_loss), disc_loss.append(_disc_loss)
 
                 print(
-                    f"Epoch: {epoch}, Gen Loss:{gen_loss[-1]}, Disc Loss:{disc_loss[-1]}"
+                    f"Epoch: {epoch}, Iteration:{idx}, Gen Loss:{gen_loss[-1]}, Disc Loss:{disc_loss[-1]}"
                 )
 
-                # for every 100 epochs save the model and generate the samples from generator
-                if (epoch % 100) == 0:
-                    torch.save(self.generator, model_name)
-                    if plot_samples:
-                        _path_to_plot = plot_samples.split(".")
-                        path_to_samples = f"{_path_to_plot[0]}_{epoch}.{_path_to_plot[-1]}"
-                        generate_and_save_images()(self.generator,
-                                                   torch.randn(
-                                                       (16, latent_dim)).to(
-                                                           self.device),
-                                                   path_to_samples, dataset)
+            if plot_samples:
+                _path_to_plot = plot_samples.split(".")
+                path_to_samples = f"{_path_to_plot[0]}_{epoch}.{_path_to_plot[-1]}"
+                generate_and_save_images(
+                    self.generator,
+                    torch.randn((16, latent_dim, 1, 1)).to(self.device),
+                    path_to_samples, dataset)
 
+            torch.save(self.generator, model_name)
             # plot the loss values
             if loss_plot: plot_gan_loss_plots(disc_loss, gen_loss, loss_plot)
 
@@ -135,25 +134,23 @@ class SelfInducingGANTrainer(BaseGANTrainer):
     def disc_step(self, xthat, xt, target_labels):
         """Discriminator backprop step"""
         # store disc loss
-        disc_loss_log_ = []
 
         # train disc 5 times before performing gan update
-        for t in range(5):
-            # find true and false value for the real and fake dist
-            disc_true, labels = self.discriminator(xt, self_learning=True)
-            disc_false = self.discriminator(xthat.data)
+        # for t in range(5):
+        # find true and false value for the real and fake dist
+        disc_true, labels = self.discriminator(xt, self_learning=True)
+        disc_false = self.discriminator(xthat.data)
 
-            # find the values for the true dist and fake dist
-            disc_loss = -torch.mean(torch.log(disc_true)) - torch.mean(
-                torch.log(1 - disc_false))
+        # find the values for the true dist and fake dist
+        disc_loss = -torch.mean(torch.log(disc_true)) - torch.mean(
+            torch.log(1 - disc_false))
 
-            rotnet_loss = self.self_inducing_loss(target_labels, labels)
-            disc_loss += rotnet_loss
+        rotnet_loss = self.self_inducing_loss(labels, target_labels)
+        total_loss = disc_loss + 1.0 * rotnet_loss
 
-            # take a step on discriminator optimizer
-            self.discriminator_optimizer.zero_grad()
-            disc_loss.backward()
-            self.discriminator_optimizer.step()
-            disc_loss_log_.append(disc_loss.item())
+        # take a step on discriminator optimizer
+        self.discriminator_optimizer.zero_grad()
+        total_loss.backward()
+        self.discriminator_optimizer.step()
 
-        return np.mean(disc_loss_log_)
+        return total_loss.detach().cpu().numpy()

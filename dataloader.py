@@ -5,6 +5,7 @@ github:sanidhyamangal
 import random
 from pathlib import Path
 
+import numpy as np
 import torch
 from matplotlib import pyplot as plt
 from PIL import Image
@@ -18,6 +19,7 @@ class RotNetDataset(Dataset):
     def __init__(self, path_to_images, transform=None) -> None:
         super().__init__()
         self.images_path = [i for i in Path(path_to_images).glob("*.jpg")]
+        self.rotations = np.random.randint(0, 4, size=len(self.images_path))
         self.transform = transform
 
     def __len__(self):
@@ -28,8 +30,8 @@ class RotNetDataset(Dataset):
             index = index.tolist()
 
         image = Image.open(self.images_path[index])
-        angle = random.sample([0, 1, 2, 3], k=1)[0]
-        image = rotate(image, angle * 90)
+        angle = self.rotations[index]
+        image = rotate(image, angle * 90.0)
 
         if self.transform:
             image = self.transform(image)

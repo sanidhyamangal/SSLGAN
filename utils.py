@@ -12,6 +12,15 @@ import torchvision.utils as vutils  # for plotting and other part
 from torchvision import transforms  # for transforming the vision related ops
 
 
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+    elif classname.find('BatchNorm') != -1:
+        nn.init.normal_(m.weight.data, 1.0, 0.02)
+        nn.init.constant_(m.bias.data, 0)
+
+
 def create_dirs_if_not_exists(path) -> None:
     """function to create subdirs for loss plots"""
     _path = os.path.split(path)
@@ -40,6 +49,7 @@ def create_rot_transforms():
     return transforms.Compose([
         transforms.PILToTensor(),
         transforms.Resize(size=(64, 64)),
+        transforms.ConvertImageDtype(torch.float32),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
 
@@ -48,7 +58,7 @@ def generate_and_save_images(model: nn.Module,
                              test_input: torch.FloatTensor,
                              image_name: str = "generated.png",
                              multi_channel: bool = False,
-                             show_image: bool = True) -> None:
+                             show_image: bool = False) -> None:
     """
     A helper function for generating and saving images during training ops
 
@@ -62,7 +72,8 @@ def generate_and_save_images(model: nn.Module,
     # This is so all layers run in inference mode (batchnorm).
     model.eval()
     with torch.no_grad():
-        predictions = model(test_input)
+        predictions = model(test_input).detach().cpu().numpy().transpose(
+            0, 2, 3, 1)
 
     fig = plt.figure(figsize=(4, 4))
 
@@ -80,3 +91,7 @@ def generate_and_save_images(model: nn.Module,
     # show image only if flagged to true
     if show_image:
         plt.show()
+
+
+#lambda function to check if cuda is supported or not
+DEVICE = lambda: "cuda" if torch.cuda.is_available() else "cpu"
