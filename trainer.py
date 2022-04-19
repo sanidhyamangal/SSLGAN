@@ -11,6 +11,7 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
+from logger import logger
 from utils import generate_and_save_images, plot_gan_loss_plots
 
 
@@ -96,7 +97,10 @@ class BaseGANTrainer:
         # logs for the loss plotting
         gen_loss = []
         disc_loss = []
-        dataloader = DataLoader(dataset, batch_size=batch_sz, shuffle=True)
+        dataloader = DataLoader(dataset,
+                                batch_size=batch_sz,
+                                shuffle=True,
+                                num_workers=2)
         latent_dim = 100
 
         # train models for n+1 epochs
@@ -113,7 +117,7 @@ class BaseGANTrainer:
 
                 gen_loss.append(_gen_loss), disc_loss.append(_disc_loss)
 
-                print(
+                logger.info(
                     f"Epoch: {epoch}, Iteration:{idx}, Gen Loss:{gen_loss[-1]}, Disc Loss:{disc_loss[-1]}"
                 )
 

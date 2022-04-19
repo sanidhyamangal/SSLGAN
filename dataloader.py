@@ -16,11 +16,15 @@ from utils import create_rot_transforms
 
 
 class RotNetDataset(Dataset):
-    def __init__(self, path_to_images, transform=None) -> None:
+    def __init__(self,
+                 path_to_images,
+                 transform=None,
+                 use_rotations=False) -> None:
         super().__init__()
         self.images_path = [i for i in Path(path_to_images).glob("*.jpg")]
         self.rotations = np.random.randint(0, 4, size=len(self.images_path))
         self.transform = transform
+        self.use_rotation = use_rotations
 
     def __len__(self):
         return len(self.images_path)
@@ -30,8 +34,10 @@ class RotNetDataset(Dataset):
             index = index.tolist()
 
         image = Image.open(self.images_path[index])
-        angle = self.rotations[index]
-        image = rotate(image, angle * 90.0)
+        angle = 0
+        if self.use_rotation:
+            angle = self.rotations[index]
+            image = rotate(image, angle * 90.0)
 
         if self.transform:
             image = self.transform(image)
