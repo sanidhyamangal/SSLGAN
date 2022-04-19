@@ -6,6 +6,7 @@ import os
 from typing import List
 
 import matplotlib.pyplot as plt  # for plotting
+import numpy as np
 import torch  # for pytorch based stuff
 import torch.nn as nn  # for nn stuff
 import torchvision.utils as vutils  # for plotting and other part
@@ -91,6 +92,17 @@ def generate_and_save_images(model: nn.Module,
     # show image only if flagged to true
     if show_image:
         plt.show()
+
+    plt.clf()
+
+
+def plot_sample_images(output, image_name):
+    fig = plt.figure(figsize=(8, 8))
+    plt.axis("off")
+    plt.imshow(np.transpose(output, (1, 2, 0)))
+    create_dirs_if_not_exists(image_name)
+    plt.savefig(image_name)
+    plt.clf()
 
 
 #lambda function to check if cuda is supported or not

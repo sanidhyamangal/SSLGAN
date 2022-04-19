@@ -25,9 +25,9 @@ rotnet_trainer = BaseGANTrainer(disctiminator=discriminator,
                                 disc_opt=Adam,
                                 device=DEVICE())
 
-rotnet_trainer.train(10,
+rotnet_trainer.train(50,
                      dataset=dataset,
-                     batch_sz=128,
+                     batch_sz=64,
                      loss_plot="plots/rotnet/loss.png",
                      plot_samples="plots/samples/rotnet/epoch.png",
                      model_name="rotnet_generator.pt")
