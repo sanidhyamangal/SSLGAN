@@ -103,6 +103,7 @@ def plot_sample_images(output, image_name):
     create_dirs_if_not_exists(image_name)
     plt.savefig(image_name)
     plt.clf()
+    plt.close(fig)
 
 
 #lambda function to check if cuda is supported or not
