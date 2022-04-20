@@ -68,9 +68,9 @@ class Discriminator(nn.Module):
         return self.main(input)
 
 
-class SelfInducingDiscriminator(nn.Module):
+class RotnetDiscriminator(nn.Module):
     def __init__(self, nc=3, ndf=64, nclasses=4):
-        super(SelfInducingDiscriminator, self).__init__()
+        super(RotnetDiscriminator, self).__init__()
         self.main = nn.Sequential(
             # input is (nc) x 64 x 64
             nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
@@ -107,4 +107,49 @@ class SelfInducingDiscriminator(nn.Module):
             return out
         z = torch.reshape(features, shape=(features.shape[0], -1))
         out_sl = self.self_inducing(z)
+        return out, out_sl
+
+
+class ContrastiveDiscriminator(nn.Module):
+    def __init__(self, nc=3, ndf=64):
+        super(ContrastiveDiscriminator, self).__init__()
+        self.main = nn.Sequential(
+            # input is (nc) x 64 x 64
+            nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf) x 32 x 32
+            nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 2),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*2) x 16 x 16
+            nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 4),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*4) x 8 x 8
+            nn.Conv2d(ndf * 4, ndf * 8, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf * 8),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf*8) x 4 x 4
+        )
+
+        self.discriminator = nn.Sequential(
+            nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False), nn.Sigmoid())
+
+        self.embedding = nn.Sequential(nn.LazyLinear(1024))
+        self.projection = nn.Sequential(nn.Linear(1024, 128))
+
+    def forward(self, x, self_learning=False, rotation_learning=True):
+        features = self.main(x)
+        if not rotation_learning and self_learning:
+            z = torch.reshape(features, shape=(features.shape[0], -1))
+            embeddings = self.embedding(z)
+            projection = self.projection(embeddings)
+            return projection
+
+        if not self_learning:
+            out = self.discriminator(features)
+            return out
+
+        z = torch.reshape(features, shape=(features.shape[0], -1))
+        out_sl = self.projection(self.embedding(z))
         return out, out_sl

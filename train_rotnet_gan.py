@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 
 from dataloader import RotNetDataset
 from logger import logger
-from models import Generator, SelfInducingDiscriminator
+from models import Generator, RotnetDiscriminator
 from utils import (DEVICE, create_rot_transforms, plot_sample_images,
                    weights_init)
 
@@ -23,7 +23,7 @@ torch.manual_seed(999)
 dataset = RotNetDataset("images",
                         transform=create_rot_transforms(),
                         use_rotations=True)
-netD = SelfInducingDiscriminator().to(DEVICE())
+netD = RotnetDiscriminator().to(DEVICE())
 netD.apply(weights_init)
 netG = Generator().to(DEVICE())
 netG.apply(weights_init)
