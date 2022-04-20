@@ -138,16 +138,16 @@ class ContrastiveDiscriminator(nn.Module):
         self.embedding = nn.Sequential(nn.LazyLinear(1024))
         self.projection = nn.Sequential(nn.Linear(1024, 128))
 
-    def forward(self, x, self_learning=False, rotation_learning=True):
+    def forward(self, x, self_learning=False, discriminator=True):
         features = self.main(x)
-        if not rotation_learning and self_learning:
+        if not discriminator and self_learning:
             z = torch.reshape(features, shape=(features.shape[0], -1))
             embeddings = self.embedding(z)
             projection = self.projection(embeddings)
             return projection
 
+        out = self.discriminator(features)
         if not self_learning:
-            out = self.discriminator(features)
             return out
 
         z = torch.reshape(features, shape=(features.shape[0], -1))
