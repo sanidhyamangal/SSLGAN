@@ -55,6 +55,14 @@ def create_rot_transforms():
     ])
 
 
+def create_con_transforms():
+    return transforms.Compose([
+        transforms.ColorJitter(0.4, 0.4, 0.4, 0.1),
+        transforms.RandomCrop(size=(64, 64)),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    ])
+
+
 def generate_and_save_images(model: nn.Module,
                              test_input: torch.FloatTensor,
                              image_name: str = "generated.png",

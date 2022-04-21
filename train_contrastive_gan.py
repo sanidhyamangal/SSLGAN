@@ -11,19 +11,21 @@ from matplotlib import pyplot as plt
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from dataloader import RotNetDataset
+from dataloader import ContrastiveDataset
 from logger import logger
-from models import Generator, RotnetDiscriminator
-from utils import (DEVICE, create_rot_transforms, plot_sample_images,
+from losses import ContrastiveLoss
+from models import ContrastiveDiscriminator, Generator
+from utils import (DEVICE, create_con_transforms, plot_sample_images,
                    weights_init)
 
 torch.manual_seed(999)
 
 # create a dataset
-dataset = RotNetDataset("images",
-                        transform=create_rot_transforms(),
-                        use_rotations=True)
-netD = RotnetDiscriminator().to(DEVICE())
+dataset = ContrastiveDataset(
+    "images",
+    transform=create_con_transforms(),
+)
+netD = ContrastiveDiscriminator().to(DEVICE())
 netD.apply(weights_init)
 netG = Generator().to(DEVICE())
 netG.apply(weights_init)
@@ -38,7 +40,7 @@ real_label = 1
 fake_label = 0
 device = DEVICE()
 criterion = nn.BCELoss()
-self_inducing_criterion = nn.CrossEntropyLoss()
+self_inducing_criterion = ContrastiveLoss(64, temperature=0.5)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True, num_workers=2)
 optimizerD = Adam(netD.parameters(), lr=0.0002)
 optimizerG = Adam(netG.parameters(), lr=0.0002)
@@ -58,17 +60,20 @@ for epoch in range(num_epochs):
         netD.zero_grad()
         # Format batch
         real_cpu = data[0].to(device)
-        target_label = data[1].to(device)
+        augmented_image = data[1].to(device)
         b_size = real_cpu.size(0)
         label = torch.full((b_size, ),
                            real_label,
                            dtype=torch.float,
                            device=device)
         # Forward pass real batch through D
-        output, angle_pred = netD(real_cpu, self_learning=True)
+        output, projection = netD(real_cpu, self_learning=True)
+        aug_projection = netD.forward(augmented_image,
+                                      self_learning=True,
+                                      discriminator=False)
         # Calculate loss on all-real batch
         errD_real = criterion(output.view(-1), label)
-        errD_rotation = self_inducing_criterion(angle_pred, target_label)
+        errD_rotation = self_inducing_criterion(projection, aug_projection)
         # Calculate gradients for D in backward pass
         errD_real_rot = errD_real + errD_rotation
         errD_real_rot.backward()
@@ -132,4 +137,4 @@ for epoch in range(num_epochs):
 
         iters += 1
 
-torch.save(netG, "generator_rotnet.pt")
+torch.save(netG, "generator_contrastive.pt")
