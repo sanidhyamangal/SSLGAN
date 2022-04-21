@@ -10,6 +10,7 @@ import torch
 from matplotlib import pyplot as plt
 from PIL import Image
 from torch.utils.data import Dataset
+from torchvision import transforms  # for the transforms on the images
 from torchvision.transforms.functional import rotate
 
 from utils import create_rot_transforms
@@ -43,6 +44,40 @@ class RotNetDataset(Dataset):
             image = self.transform(image)
 
         return image, angle
+
+
+class ContrastiveDataset(Dataset):
+    def __init__(
+        self,
+        path_to_images,
+        transform=None,
+    ) -> None:
+        super().__init__()
+        self.images_path = [i for i in Path(path_to_images).glob("*.jpg")]
+        assert transform is not None, "You need to provide some transformations for the contrastive learning to work"
+        self.transform = transform
+
+        self.pil_to_tensor_transform = transforms.Compose([
+            transforms.PILToTensor(),
+            transforms.Resize(size=(64, 64)),
+            transforms.ConvertImageDtype(torch.float32)
+        ])
+        self.normalize = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+
+    def __len__(self):
+        return len(self.images_path)
+
+    def __getitem__(self, index):
+        if torch.is_tensor(index):
+            index = index.tolist()
+
+        image = Image.open(self.images_path[index])
+        image = self.pil_to_tensor_transform(image)
+        if self.transform:
+            augmented = self.transform(image)
+        image = self.normalize(image)
+
+        return image, augmented
 
 
 if __name__ == "__main__":
