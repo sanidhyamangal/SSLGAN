@@ -82,20 +82,13 @@ class ContrastiveDataset(Dataset):
         if torch.is_tensor(index):
             index = index.tolist()
 
+        # open image and convert it to tensor
         image = Image.open(self.images_path[index])
         image = self.pil_to_tensor_transform(image)
+        # transform the image
         if self.transform:
             augmented = self.transform(image)
+        # normalize images to aling with augmented images
         image = self.normalize(image)
 
         return image, augmented
-
-
-if __name__ == "__main__":
-    tranforms = create_rot_transforms()
-
-    rotnet_dataset = RotNetDataset("images", transform=tranforms)
-
-    image, angle = rotnet_dataset[0]
-    plt.imshow(image.detach().numpy().transpose(1, 2, 0))
-    plt.show()
