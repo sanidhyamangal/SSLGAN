@@ -51,10 +51,7 @@ for epoch in range(num_epochs):
     # For each batch in the dataloader
     for i, data in enumerate(dataloader):
 
-        ############################
-        # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
-        ###########################
-        ## Train with all-real batch
+        ## Train with real data dist
         netD.zero_grad()
         # Format batch
         real_cpu = data[0].to(device)
@@ -66,15 +63,16 @@ for epoch in range(num_epochs):
                            device=device)
         # Forward pass real batch through D
         output, angle_pred = netD(real_cpu, self_learning=True)
-        # Calculate loss on all-real batch
+        # Calculate loss on real data dist
         errD_real = criterion(output.view(-1), label)
+        # compute rotation error
         errD_rotation = self_inducing_criterion(angle_pred, target_label)
         # Calculate gradients for D in backward pass
         errD_real_rot = errD_real + errD_rotation
         errD_real_rot.backward()
         D_x = output.mean().item()
 
-        ## Train with all-fake batch
+        ## Train the discriminator with the fake data dist
         # Generate batch of latent vectors
         noise = torch.randn(b_size, 100, 1, 1, device=device)
         # Generate fake image batch with G
@@ -93,9 +91,7 @@ for epoch in range(num_epochs):
         # Update D
         optimizerD.step()
 
-        ############################
-        # (2) Update G network: maximize log(D(G(z)))
-        ###########################
+        # network updater for the generator
         netG.zero_grad()
         label.fill_(real_label)  # fake labels are real for generator cost
         # Since we just updated D, perform another forward pass of all-fake batch through D
