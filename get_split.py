@@ -1,7 +1,7 @@
 """
-author:Sanidhya Mangal
-github:sanidhyamangal
+author:Sanidhya Mangal, Daniel Shu, Rishav Sen, Jatin Kodali
 """
+
 import os  # for os based ops
 import random  # for sampling
 from pathlib import Path

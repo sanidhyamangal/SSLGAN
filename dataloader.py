@@ -1,7 +1,7 @@
 """
-author:Sanidhya Mangal
-github:sanidhyamangal
+author:Sanidhya Mangal, Daniel Shu, Rishav Sen, Jatin Kodali
 """
+
 import random
 from pathlib import Path
 

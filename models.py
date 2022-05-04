@@ -1,14 +1,8 @@
 """
-author:Sanidhya Mangal
-github:sanidhyamangal
+author:Sanidhya Mangal, Daniel Shu, Rishav Sen, Jatin Kodali
 """
-from functools import partial
-from typing import List
-
 import torch
 from torch import nn
-
-# Generator Code
 
 
 # generator model

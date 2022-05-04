@@ -1,6 +1,5 @@
 """
-author:Sanidhya Mangal
-github:sanidhyamangal
+author:Sanidhya Mangal, Daniel Shu, Rishav Sen, Jatin Kodali
 """
 
 import numpy as np
