@@ -106,12 +106,14 @@ def generate_and_save_images(model: nn.Module,
     plt.clf()
 
 
-def plot_sample_images(output, image_name):
+def plot_sample_images(output, image_name, show_image: bool = False):
     fig = plt.figure(figsize=(8, 8))
     plt.axis("off")
     plt.imshow(np.transpose(output, (1, 2, 0)))
     create_dirs_if_not_exists(image_name)
     plt.savefig(image_name)
+    if show_image:
+        plt.show()
     plt.clf()
     plt.close(fig)
 
