@@ -47,6 +47,7 @@ def plot_gan_loss_plots(disc_loss: List[float], gen_loss: List[float],
 
 
 def create_rot_transforms():
+    """Function to handle rotation net based transformations"""
     return transforms.Compose([
         transforms.PILToTensor(),
         transforms.Resize(size=(64, 64)),
@@ -56,6 +57,7 @@ def create_rot_transforms():
 
 
 def create_con_transforms():
+    """Function to create image transforms for the contrastive learning"""
     return transforms.Compose([
         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1),
         transforms.RandomCrop(size=(64, 64)),

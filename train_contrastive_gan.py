@@ -53,9 +53,6 @@ for epoch in range(num_epochs):
     # For each batch in the dataloader
     for i, data in enumerate(dataloader):
 
-        ############################
-        # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
-        ###########################
         ## Train with all-real batch
         netD.zero_grad()
         # Format batch
@@ -66,17 +63,18 @@ for epoch in range(num_epochs):
                            real_label,
                            dtype=torch.float,
                            device=device)
-        # Forward pass real batch through D
+        # forward pass for the real samples over discriminator.
         output, projection = netD(real_cpu, self_learning=True)
         aug_projection = netD.forward(augmented_image,
                                       self_learning=True,
                                       discriminator=False)
         # Calculate loss on all-real batch
         errD_real = criterion(output.view(-1), label)
-        errD_rotation = self_inducing_criterion(projection, aug_projection)
+        errD_ssl = self_inducing_criterion(projection,
+                                           aug_projection)  # contrastive loss
         # Calculate gradients for D in backward pass
-        errD_real_rot = errD_real + errD_rotation
-        errD_real_rot.backward()
+        errD_total = errD_real + errD_ssl
+        errD_total.backward()
         D_x = output.mean().item()
 
         ## Train with all-fake batch
@@ -94,13 +92,11 @@ for epoch in range(num_epochs):
         D_G_z1 = output.mean().item()
 
         # Compute error of D as sum over the fake and the real batches
-        errD = errD_real_rot + errD_fake
+        errD = errD_total + errD_fake
         # Update D
         optimizerD.step()
 
-        ############################
-        # (2) Update G network: maximize log(D(G(z)))
-        ###########################
+        # train the generator network
         netG.zero_grad()
         label.fill_(real_label)  # fake labels are real for generator cost
         # Since we just updated D, perform another forward pass of all-fake batch through D
@@ -137,4 +133,5 @@ for epoch in range(num_epochs):
 
         iters += 1
 
+# save model for later use of generation
 torch.save(netG, "generator_contrastive.pt")
