@@ -57,6 +57,7 @@ def create_rot_transforms():
 
 
 def create_con_transforms():
+    """Function to create image transforms for the contrastive learning"""
     return transforms.Compose([
         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1),
         transforms.RandomCrop(size=(64, 64)),
