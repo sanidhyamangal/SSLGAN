@@ -11,6 +11,7 @@ from torch import nn
 # Generator Code
 
 
+# generator model
 class Generator(nn.Module):
     def __init__(self, ngf=64, nz=100, nc=3):
         super(Generator, self).__init__()
@@ -41,6 +42,7 @@ class Generator(nn.Module):
         return self.main(input)
 
 
+# discriminator for the vanilla gan
 class Discriminator(nn.Module):
     def __init__(self, nc=3, ndf=64):
         super(Discriminator, self).__init__()
@@ -68,6 +70,7 @@ class Discriminator(nn.Module):
         return self.main(input)
 
 
+# rotation discriminator designed for the rotational training
 class RotnetDiscriminator(nn.Module):
     def __init__(self, nc=3, ndf=64, nclasses=4):
         super(RotnetDiscriminator, self).__init__()
@@ -110,6 +113,7 @@ class RotnetDiscriminator(nn.Module):
         return out, out_sl
 
 
+# discriminator for the contrastive training
 class ContrastiveDiscriminator(nn.Module):
     def __init__(self, nc=3, ndf=64):
         super(ContrastiveDiscriminator, self).__init__()
@@ -139,13 +143,17 @@ class ContrastiveDiscriminator(nn.Module):
         self.projection = nn.Sequential(nn.Linear(1024, 128))
 
     def forward(self, x, self_learning=False, discriminator=True):
+        # feature learner
         features = self.main(x)
+
+        # for only self learning node is required to be activated
         if not discriminator and self_learning:
             z = torch.reshape(features, shape=(features.shape[0], -1))
             embeddings = self.embedding(z)
             projection = self.projection(embeddings)
             return projection
 
+        # when only discrimiative node is required to be active
         out = self.discriminator(features)
         if not self_learning:
             return out

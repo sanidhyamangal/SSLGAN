@@ -47,6 +47,7 @@ def plot_gan_loss_plots(disc_loss: List[float], gen_loss: List[float],
 
 
 def create_rot_transforms():
+    """Function to handle rotation net based transformations"""
     return transforms.Compose([
         transforms.PILToTensor(),
         transforms.Resize(size=(64, 64)),
@@ -56,6 +57,7 @@ def create_rot_transforms():
 
 
 def create_con_transforms():
+    """Function to create image transforms for the contrastive learning"""
     return transforms.Compose([
         transforms.ColorJitter(0.4, 0.4, 0.4, 0.1),
         transforms.RandomCrop(size=(64, 64)),
@@ -104,12 +106,14 @@ def generate_and_save_images(model: nn.Module,
     plt.clf()
 
 
-def plot_sample_images(output, image_name):
+def plot_sample_images(output, image_name, show_image: bool = False):
     fig = plt.figure(figsize=(8, 8))
     plt.axis("off")
     plt.imshow(np.transpose(output, (1, 2, 0)))
     create_dirs_if_not_exists(image_name)
     plt.savefig(image_name)
+    if show_image:
+        plt.show()
     plt.clf()
     plt.close(fig)
 
