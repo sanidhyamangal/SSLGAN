@@ -1,9 +1,10 @@
-import inspect
+"""
+author:Sanidhya Mangal, Daniel Shu, Rishav Sen, Jatin Kodali
+"""
+
 import logging
 import logging.handlers
-import os
 import sys
-from datetime import date
 
 consoleLoggingLevel = logging.DEBUG
 

@@ -1,7 +1,7 @@
 """
-author:Sanidhya Mangal
-github:sanidhyamangal
+author:Sanidhya Mangal, Daniel Shu, Rishav Sen, Jatin Kodali
 """
+
 import torch  # for torch
 import torch.nn.functional as F  # for functional layer
 from torch import nn  # for nn
